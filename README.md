@@ -30,39 +30,48 @@ You can also clone this repository into your `node_modules` directory.
 		password: ''
 	});
 
-## Authorization
+## Authorization & Queries example
 
 Once connected to the site, you can authenticate against the Joomla database using the request cookies. Here's an example using Connect, assuming a pre-connected `joomla` object:
+```
+var joomla = require('joomla');
+joomla('/var/www/joomla');
 
-	var connect = require('connect');
+var express = require('express')
+var cookieParser = require('cookie-parser')
 
-	connect.createServer(connect.cookieParser(), function (req, res, next) {
+var app = express()
+app.use(cookieParser())
 
-	  joomla.auth_cookies(req.cookies, function  (result) {
-	    res.writeHead(200, {'Content-Type': 'text/plain'});
+app.get('/', function (req, res) {
+  // Cookies that have not been signed
+  console.log('Cookies: ', req.cookies)
 
-	    if (result !== undefined) {
-	      res.end(result.username + ' ' + result.userid);
-	    } else {
-	      res.end('no session');
-	    }
-	  });
+  // Cookies that have been signed
+  console.log('Signed Cookies: ', req.signedCookies)
 
-	}).listen(8080, "localhost");
-
-## Queries
-
-You can also use the db.query function to make queries against the database:
-
-	joomla.db.query('SELECT * FROM #__users', function  (results) {
+  joomla.auth_cookies(req.cookies, function  (result) {
     res.writeHead(200, {'Content-Type': 'text/plain'});
 
-    for (var i=0; i < results.length; i++) {
-      var row = results[i];
+    if (result !== undefined) {
+      res.write(result.username + ' ' + result.userid);
+ 
+ //You can also use the db.query function to make queries against the database: 
+  joomla.db.query('SELECT * FROM #__users', function  (results) {
+                //res.writeHead(200, {'Content-Type': 'text/plain'});
+                for (var i=0; i < results.length; i++) {
+                var row = results[i];
+                res.write(row.username + "\n");
+                }
+        });
 
-      res.end(row.username + "\n");
+  res.end();
+    } else {
+      res.end('no session');
     }
-
   });
+})
 
+app.listen(8082)
+```
 The `#__` prefix is automatically converted to the prefix set in your Joomla configuration.
